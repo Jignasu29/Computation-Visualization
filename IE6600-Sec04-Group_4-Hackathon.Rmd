@@ -1,0 +1,417 @@
+---
+title: "IE6600: Computaton and Data Visualisation"
+subtitle: "Hackathon"
+author: "Team - 4: Mradul, Parth, Jignasu "
+output:
+  html_document:
+    theme: lumen
+    toc: true
+    toc_depth: 3
+    smooth_scroll: true
+    highlight: tango  # specifies the syntax highlighting style
+always_allow_html: yes
+include:
+header-includes:
+ \usepackage{framed, xcolor, float, fancyhdr, placeins, lastpage, amsmath}
+ \pagestyle{fancy}
+ \fancyhead[L]{Hackathon}
+ \fancyhead[R]{IE6600$:$ Computaton and Data Visualisation}
+ \cfoot{\thepage\ of \pageref{LastPage}}
+---
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+knitr::include_graphics("https://www.fifplay.com/img/public/fifa-19-logo-black.png")
+```
+
+# Introduction 
+
+FIFA is one of the most popular football simulation video games of all times. I am sure that not only me but most of the people (I guess the majority would be males) probably played this game once in their life. Especially if you are a football fan, then you played this game not only once. I, as a football fan, have played FIFA’s series for a long period of time, especially during my school years, and never got bored. 
+
+This series is all about football! Football is a big part of our life whether we like it or not. However, some of us like me really like it! :) Because of its importance, football fans also play football video games in order to maintain and live its excitement over and over again. EA’s FIFA football simulation video games have a very long history in game industry and their FIFA series have been playing from many users. Recently, while I was doing my research about finding a good dataset, I found FIFA 19 players dataset on Kaggle and got very excited about it. Because I love football and my job in data space, I wanted to do my own analysis in this dataset.
+
+We discovered an internet database that has all these characteristics for the most recent FIFA game, FIFA 19, as well as actual facts like player salary, value, club, and jersey number. By comprehending the connection between various in-game traits and actual values, we seek to address the problem statement that has been put out. How, for instance, does a player's overall affect their jersey number? The dreaded number 10 has always drawn our attention, but is it really the shirt that the top players wear? Which quality has helped people earn the most money?
+
+In order to determine the statistical significance of these various in-game and real-world numbers, we are currently proposing to perform a linear regression between them. If a relationship is substantial, we can compare the coefficients and correlation coefficients to comprehend the strength of the association and how this game might be used to forecast or explain real-world values.
+
+Real soccer players and soccer fans are the major focus of our analyses. The most from our analyses will be real soccer players. If I played soccer, I would try to figure out which quality of mine I can develop the most in order to not only become a better player, but also earn more money. By letting players know which qualities are actually valued in soccer and for a club, our analysis should be able to steer their training. Soccer fanatics will also benefit from our analysis as it will help them better understand which characteristics they may want to look for when looking at potential trade prospects for their respective team.
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(tidyverse) 
+library(magrittr)
+library(DataExplorer)
+library(maps)
+library(plotly)
+library(DT)
+library(tidytext)
+library(gridExtra)
+library(factoextra)
+library(dplyr)
+library(maps)
+library(ggplot2)
+library(scales)
+library(ggalluvial)
+```
+# Data Preprocessing
+
+We gathered our dataset from kaggle's competitive dataset.The original dataset had 38 varaible column and 17770 including all the attributes for all the players and general real-world information about them such as wage and value. The teams table originally had 14 columns. There isn’t explicit information on when this data was collected, however, we do know it was fairly recently since FIFA 19. It is also worth noting that all those statistics are suggested mostly by a 6,000 group of volunteers led by Head of Data Collection & Licensing.
+```{r, echo=FALSE, warning=FALSE}
+df <- read.csv("players_19-2.csv", encoding = "UTF-8")
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+bundesliga <- c(
+  "1. FC Nürnberg", "1. FSV Mainz 05", "Bayer 04 Leverkusen", "FC Bayern München",
+  "Borussia Dortmund", "Borussia Mönchengladbach", "Eintracht Frankfurt",
+  "FC Augsburg", "FC Schalke 04", "Fortuna Düsseldorf", "Hannover 96",
+  "Hertha BSC", "RB Leipzig", "SC Freiburg", "TSG 1899 Hoffenheim",
+  "VfB Stuttgart", "VfL Wolfsburg", "SV Werder Bremen"
+)
+
+premierLeague <- c(
+  "Arsenal", "Bournemouth", "Brighton & Hove Albion", "Burnley",
+  "Cardiff City", "Chelsea", "Crystal Palace", "Everton", "Fulham",
+  "Huddersfield Town", "Leicester City", "Liverpool", "Manchester City",
+  "Manchester United", "Newcastle United", "Southampton", 
+  "Tottenham Hotspur", "Watford", "West Ham United", "Wolverhampton Wanderers"
+  
+)
+
+laliga <- c(
+  "Athletic Club de Bilbao", "Atlético Madrid", "CD Leganés",
+  "Deportivo Alavés", "FC Barcelona", "Getafe CF", "Girona FC", 
+  "Levante UD", "Rayo Vallecano", "RC Celta", "RCD Espanyol", 
+  "Real Betis", "Real Madrid", "Real Sociedad", "Real Valladolid CF",
+  "SD Eibar", "SD Huesca", "Sevilla FC", "Valencia CF", "Villarreal CF"
+)
+
+seriea <- c(
+  "Atalanta","Bologna","Cagliari","Chievo Verona","Empoli", "Fiorentina","Frosinone","Genoa",
+  "Inter","Juventus","Lazio","Milan","Napoli","Parma","Roma","Sampdoria","Sassuolo","SPAL",
+  "Torino","Udinese"
+  
+)
+
+superlig <- c(
+  "Akhisar Belediyespor","Alanyaspor", "Antalyaspor","Medipol Başakşehir FK","BB Erzurumspor","Beşiktaş JK",
+  "Bursaspor","Çaykur Rizespor","Fenerbahçe SK", "Galatasaray SK","Göztepe SK","Kasimpaşa SK",
+  "Kayserispor","Atiker Konyaspor","MKE Ankaragücü", "Sivasspor","Trabzonspor","Yeni Malatyaspor"
+)
+
+ligue1 <- c(
+  "Amiens SC", "Angers SCO", "AS Monaco", "AS Saint-Étienne", "Dijon FCO", "En Avant de Guingamp",
+  "FC Nantes", "FC Girondins de Bordeaux", "LOSC Lille", "Montpellier HSC", "Nîmes Olympique", 
+  "OGC Nice", "Olympique Lyonnais","Olympique de Marseille", "Paris Saint-Germain", 
+  "RC Strasbourg Alsace", "Stade Malherbe Caen", "Stade de Reims", "Stade Rennais FC", "Toulouse Football Club"
+)
+
+eredivisie <- c(
+  "ADO Den Haag","Ajax", "AZ Alkmaar", "De Graafschap","Excelsior","FC Emmen","FC Groningen",
+  "FC Utrecht", "Feyenoord","Fortuna Sittard", "Heracles Almelo","NAC Breda",
+  "PEC Zwolle", "PSV","SC Heerenveen","Vitesse","VVV-Venlo","Willem II"
+)
+
+liganos <- c(
+  "Os Belenenses", "Boavista FC", "CD Feirense", "CD Tondela", "CD Aves", "FC Porto",
+  "CD Nacional", "GD Chaves", "Clube Sport Marítimo", "Moreirense FC", "Portimonense SC", "Rio Ave FC",
+  "Santa Clara", "SC Braga", "SL Benfica", "Sporting CP", "Vitória Guimarães", "Vitória de Setúbal"
+)
+
+
+df %<>% mutate(
+    League = case_when(
+        club %in% bundesliga ~ "Bundesliga",
+        club %in% premierLeague ~ "Premier League",
+        club %in% laliga ~ "La Liga",
+        club %in% seriea ~ "Serie A",
+        club %in% superlig ~ "Süper Lig",
+        club %in% ligue1 ~ "Ligue 1",
+        club %in% liganos ~ "Liga Nos",
+        club %in% eredivisie ~ "Eredivisie"
+    ),
+    Country = case_when(
+        League == "Bundesliga" ~ "Germany",
+        League == "Premier League" ~ "UK",
+        League == "La Liga" ~ "Spain",
+        League == "Serie A" ~ "Italy",
+        League == "Süper Lig" ~ "Turkey",
+        League == "Ligue 1" ~ "France",
+        League == "Liga Nos" ~ "Portugal", 
+        League == "Eredivisie" ~ "Netherlands"
+    )
+) %>% filter(!is.na(League)) %>% mutate_if(is.factor, as.character)
+
+
+rm(bundesliga, premierLeague, laliga, seriea, superlig, ligue1, eredivisie, liganos)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+fw <- c("LW","RW","ST","RS","LS","CF","LF","RF")
+
+mf <- c("CAM","RCM","RM","CDM","CM","LM","LDM","RDM","LAM","RAM","LCM")
+
+dfs <-c("LCB","CDM","RCB","RB","CB","RWB","LWB")
+
+gk <-c("GK")
+
+subs <- c("SUB","RES")
+
+
+
+df %<>% mutate(
+    class = case_when(
+        team_position %in% fw ~ "Forward",
+        team_position %in% mf ~ "Midfielder",
+        team_position %in% dfs ~ "Defender",
+        team_position %in% gk ~ "Goalkeeper",
+        team_position %in% subs ~ "Subs"
+    )
+) 
+
+rm(fw,mf,dfs,subs,gk)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+ df<- df %>% 
+  rename(
+    values = value_eur,
+    wages = wage_eur,
+    position = team_position,
+    name = short_name
+    )
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df %<>% select(-team_jersey_number,-dob,-physic,)
+```
+
+# Section 1 
+ 
+### Which league has most market value captured ? 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+options(repr.plot.width = 12, repr.plot.height = 8)
+df %>% 
+  group_by(League) %>% 
+  summarise(Total.Value = sum(as.integer(values), na.rm = TRUE)) %>% 
+  ggplot(aes(reorder(League, Total.Value), Total.Value, fill = Total.Value))+
+  geom_col(show.legend = FALSE)+
+  coord_flip()+
+  theme_minimal()+
+  labs(x = NULL, y = "Market Values of the Leagues")+
+  scale_fill_gradient(low = "khaki", high = "seagreen")+
+  theme(axis.line.y = element_line(colour = "darkslategray"),
+        axis.ticks.x = element_line(colour = "darkslategray"))+
+  scale_y_continuous(labels = c("0 €", "2 Billion €", "4 Billion €", "6 Billion €"))
+
+
+```
+
+As you can depict from the picture that Premier league which started in early 1990's has market value of almost 7 Billion pounds. On top of that it has popularity due to domestic and international television rights. However, Premier league is regarded as the most watched league in the world and is said to have a potential TV  audience of 4.7 billion people. Also, it has the second highest average match attendance and highest aggregate match attendance in the world. Followed by Premier league the next highest market share has been captured by Laliga and Serie A of 5.95 billion and 4.25 billion pounds respectively. Eredivisie is the league which has least amount of market share captured of just 500 million pounds. 
+
+### Across the globe which country has highest number of players participating in the top 5 league played accross the world ? 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+
+world_map <- map_data(map = "world")
+numofplayers <- world_map %>% 
+  mutate(region = as.character(region)) %>% 
+  left_join((df %>% mutate(nationality = as.character(nationality),
+                           nationality = if_else(nationality %in% "England", 
+                                                 "UK", nationality)) %>%
+               
+               count(nationality, name = "Number_of_Player") %>%
+               rename(region = nationality) %>%
+               mutate(region = as.character(region))), by = "region")%>%
+              na_if("")%>%
+              na.omit()%>%
+              drop_na()
+
+numofplayers$Number_of_Player <- as.numeric(as.character(numofplayers$Number_of_Player))
+numofplayers <- numofplayers %>% arrange(desc(Number_of_Player))
+
+ggplot(numofplayers) +
+  geom_map(aes(map_id = region, fill = as.numeric(Number_of_Player)), map = world_map) +
+  geom_polygon(data = world_map, aes(x = long, y = lat, group = group), colour = 'black', fill = NA) +
+  expand_limits(x = world_map$long, y = world_map$lat) +
+  scale_fill_distiller(name = "Count of players", palette = "Seagreen",direction = 1) +
+  theme_void() +
+  coord_fixed()+
+    labs(title = "Number of Players from each region")
+```
+
+Brazil is the most represented country among the players from the 132 leagues studied. Almost 450 Brazilians from the sample played more than three million minutes in 2019 (1,204 per player on average). Argentina which is another South American nation follows Brazil.In the top ten places are a third South American country, Colombia (4th), six European nations, of which France, Spain, England and Germany are the best ranked (3rd, 5th, 6th and 8th respectively. The only asian country which is present in top 10 is Japan (9th). It is evident from the above chart that football does not have much quality players in continents like Asia, Australia, Africa.  
+
+### Players with highest overall rating representing their nation in international leagues
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+best_country <- df %>%
+                  group_by(nationality) %>%
+                  mutate(numofplayers = n()) %>%
+                  filter(numofplayers > 50) %>%
+                  summarize(AvgPlayerOverall = round(mean(overall),0)) %>%
+                  top_n(10, wt= AvgPlayerOverall) %>%
+                  arrange(desc(AvgPlayerOverall))
+
+best_country %>%
+  mutate(name = fct_reorder(nationality, AvgPlayerOverall)) %>%
+  ggplot( aes(x=nationality, y= AvgPlayerOverall)) +
+    geom_bar(stat="identity", fill="seagreen", alpha=.6, width=.4) +
+  coord_flip()+
+    xlab("") +
+    theme_bw()
+```
+
+To deepen our analysis, we have weighted the domestic league overall rating of each footballer according to the sporting level of the clubs of employment. Argentina have the largest number of footballers playing overseas.There are 1,219 players playing away from home in the nation. What is the most popular destination for them? Portugal, England, Spain and Italy are the one iof the famous spots where every football players want to migrate for their career development.  Though it was close but with 978 sportsmen playing abroad, Brazil won the silver medal, followed by Italy with 815 players. Besides Europe, the primary destinations in the list are Luxembourg (12.6 percent) and Chile (15.6%).
+
+# Section 2 
+
+### How age and pace are co-related for any football player ?
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+kor <- df %>% 
+  filter(League == "La Liga",class == "Forward") %>% 
+  select(name, preferred_foot, age, pace)
+
+# shapiro.test(kor$age); shapiro.test(kor$pace)
+
+options(repr.plot.width = 15, repr.plot.height = 8)
+
+hypo1 <-cor.test(kor$age, kor$pace, method = "pearson")
+hypo2 <- cor.test(kor$age, kor$pace, method = "kendall")
+hypo3 <- cor.test(kor$age, kor$pace, method = "spearman")
+
+ggplot(kor, aes(age,pace, label = name, color = preferred_foot))+
+  geom_text()+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  geom_jitter(alpha = 0.3, size = 2.5, width = 0.3, height = 0.3)+
+  geom_smooth(method = "lm", color = "gray40", lty = 2, se = FALSE, size = 0.6)+
+  scale_color_manual(values = c("seagreen","red"))+
+  labs(title = paste("Pace vs Age of players"),
+       subtitle = "La-Liga forwards")
+```
+Pace is one of the most important factors for each football players. The requirements of a modern football players are such that speed is required from all the players. Regardless of their position and the role in the team. When it comes to younger football players, this segment of their development is crucial. As we can cleary observe from the above chart regardless of foot, As with the age and injuries, the speed and pace level is gradually decreased. The pace of movement is closely related to football intelligence. Modern football requires players with speed, who can play all the positions in the team. 
+
+### How potential and overall rating are affected over the age ?
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+options(repr.plot.width = 12, repr.plot.height = 8)
+df %>% 
+  group_by(League, age) %>% 
+  summarise(overall = mean(overall),
+            potential = mean(potential)) %>% 
+  ggplot()+
+  geom_line(aes(age, potential, color = "Potential")) +
+  geom_line(aes(age, overall, color = "Overall"), alpha = 0.5) +
+  facet_wrap(League~.)+
+  scale_color_manual(values = c("green", "red"))+
+  theme(legend.position = "bottom")+
+  labs(color = NULL)+
+  ggtitle("Overall & Potential across leagues ") +
+  xlab("Overall and Potential") + ylab("Age")
+```
+Irrespective of the league, Potential and Overall are the key factors if you are looking for the performance, especially in the FIFA 19 Career Mode. If you're playing FIFA 19 for the long haul, you'll eventually need to replace the players in your team once they hit retirement age. The best replacements are of course young players, with ages 17-21 being the sweet spot. Problem is, it can be tricky to judge which FIFA 19 young players are worth your time, as some of the key stats are either hidden in menus, or displayed as aggregate values. Kylian Mbappé is the best young player in FIFA 19, and at only 19 years old, he’s got a ton of room for improvement with a guaranteed high potential rating. Brazilian-born superstar Malcom has seen a huge improvement this year, so we’re predicting big things for the coming season and have high hopes that he will grow significantly over the years thanks to high potential.
+
+Two of the most important attributes a striker needs are speed and quickness. Speed allows a player to outrun a defender and win a 50/50 ball. Quickness provides a striker with a first step that enables them to get past a center-back. Working on footwork and quickness in training can enable a striker to gain the edge they need to be a top player.Holding off defenders is just part of a modern striker’s job. A good No. 9 needs to have the physical strength to keep a defender at bay. This means having both upper and lower body strength. Throughout a 90 minute match, strikers jockey for position with center-backs. A weak forward will simply be tossed aside by a bigger, stronger defender. Having the power to hold off a center-back and wear them down physically is important today.Strikers need to be long on confidence and short on memory. A No. 9 must believe they will score every time they shoot. Players have to take the pitch with the mindset that the team is counting on them. Once a striker losses confidence in themselves, it takes a long time to rediscover form.
+
+### Most important attributes for any forwards in order to deliver the required performance. 
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df$attacking_finishing <- as.numeric(as.character(df$attacking_finishing))
+df$attacking_volleys <- as.numeric(as.character(df$attacking_volleys))
+df$power_shot_power <- as.numeric(as.character(df$power_shot_power))
+
+dfbox <- subset( df, class =="Forward", select= c("overall", "pace", "shooting", "dribbling", "passing", "attacking_finishing", "attacking_volleys","power_shot_power"))
+
+#as_tibble(dfbox)
+
+#boxplot(dfbox,las=2, col = "seagreen")+
+ #  ggtitle("A somewhat misleading boxplot")
+```
+
+# Section 3 
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+df1 <- df %>% count(League,preferred_foot,class, sort = TRUE) %>% 
+  na_if("")%>%
+  na.omit()%>%
+  drop_na()
+df1 <- df1[df1$class != "Subs", ]
+```
+
+### Distribution and average age of the players in each league
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summ <- df %>% 
+  group_by(League) %>% 
+  summarise(age = mean(age))
+
+options(repr.plot.width = 12, repr.plot.height = 8)
+
+ggplot()+
+  geom_histogram(df, mapping = aes(age, fill = League))+
+  geom_vline(summ, mapping = aes(xintercept = age), color = "red", size = 1.5)+
+  geom_text(summ, mapping = aes(x = age+3, y = 65, label = round(age,digits = 2)))+
+  facet_wrap(League~.)+
+  theme_minimal()+
+  theme(legend.position = "bottom")+
+  labs(y = "Frequency", title = "Distribution & The Average Age of The Players in each League")
+```
+
+Though they start from unpopular league, when the players reaches in their prime age i.e 24 or 25, they prefer to play in top league such as Premier league & la liga and as the time passes by they again prefer to play in unpopular age as they gets closer to 30. So basically they follows the sinosudial curve.
+
+
+### Class of players in each of top 6 leagues around the world
+```{r, echo=FALSE, warning=FALSE, message=FALSE, figures-side, fig.show="hold", out.width="50%"}
+
+par(mfrow=c(1,2))
+    
+ggplot(data = df1,
+               aes(axis1 =League, axis2 = class, axis3=preferred_foot, y=n))+ scale_x_discrete(limits = c("League", "class","preferred_foot"), expand = c(.02, .02)) +    geom_alluvium(aes(fill = preferred_foot )) +
+               geom_stratum() +
+               geom_text(stat = "stratum", aes(label = after_stat(stratum)), size=2.5) +   
+               theme_minimal() +
+               ggtitle(" Left and Right footed players in each League by position") 
+
+options(repr.plot.width = 12, repr.plot.height = 8)
+
+dfx <- df[df$class != "Subs", ]
+dfx %>% group_by(League) %>% count(class) %>% na_if("")%>%
+  na.omit()%>%
+  drop_na() %>%
+  ggplot(aes(League, n, fill = class)) +
+  geom_col()+
+  coord_polar()+
+  scale_fill_ordinal()+
+  theme_minimal()+
+  labs(x = NULL, y = NULL)+
+               ggtitle("Total players in each league by class") 
+```
+
+It is evident from both the charts that there has been ample amount of defenders and midfielders playing in top 6 leagues. Also most of the footballers have right foot as their prefered foot.
+
+# Summary
+In FIFA, each player is rated on various attributes which include stats such as: Pace, Dribbling, Shooting. These attributes combined give each player an overall score. We wanted to figure out, utilizing the current data set, what we could understand about soccer and soccer players in the real world using attributes given to players in the game.
+
+We have addressed the proposed problem statement by understanding the relationship between various in-game attributes and real-world values. Our current proposed analytic technique runs a linear regression between these different in-game and real-world values. Additionally, we used data manipulation techniques to understand basic geographical or statistical trends in our data for specific demographics and players.
+
+Our analysis was really interesting overall as it allowed us to understand the game of soccer in ways we had never understood it before. One of the questions we wanted to answer was, what positional group is the fastest. You, as I did, may imagine that all of the fastest positional groups are strikers looking to run past defenders and score goals. That is, however, only partially correct. Through our analysis we realized that ¾ of our top 4 paciest positional groups are players that play on the wings (or far edges) of the field. This is interesting as it indicates to us that the fastest players will typically be on the sides and not the middle. The 3 groups referenced are: RW/LW, RM/LM, and RB/LB. The RB/LB (defenders on the wing) group was incredibly surprising to us, but makes a lot of sense upon further review. If teams keep their fastest players as attackers on the wings of a field, you must also place fast players to defend them on the wings.
+
+Another interesting insight our group gained in this analysis was when looking at the top young players in the world of professional soccer. Some of the most prominent players in the game today started at an incredibly young age. Messi is a great example of this as he moved with his family to Barcelona at the age of 13 to fulfill his dream and potential.
+
+Despite our visualizations indicating interesting trends and analysis, we believe there are a few limitations which future analysts could explore further. One of the largest limitations of our analysis was the data itself. Most of the findings do not tell us much about the players in real life but rather are reflective of the methodology employed by EA Sports to assign attributes to players in this game.
+
+Some of the analysis done, however, will hold concrete in the world when the information used is not subjective. These variables include information like wage, club, position, jersey number, nationality, age, etc. Some of the analysis did give us insight into how the subjective attributes are correlated to the objective attributes about the players.
+
+Another limitation to our analysis was our specific approach to answer a broad goal. The question we started with was incredibly broad and we answered smaller, more specific questions throughout the process. We believe, however, that a different set of these subset questions could have navigated our analysis to a different direction. For example, we could have looked more into the positional groupings. Soccer players have various skills. For each position, different sets of skills are needed. For example, the most important skills required for a defender are completely different from the ones required by attacker/striker or other positions. A detailed analysis using Linear regression modeling could have been applied to identify or highlight the most important set of skills or key attributes for a particular player’s position. This gap was a limitation to our analysis. We encourage other groups to try such an analysis in the future as it could possibly indicate the similarity between Main stats and Face stats. This analysis might help us further understand how EA calculates face stats and what weight is provided to the individual attributes in each cumulative face stat metric. Either way, it feels intuitive enough that a Principal component analysis (PCA) could show that players can be categorized into groups, such as ‘attacking, technical’, ‘fast, dribbling’, ‘attacking, physical’.
+
+We hope our analysis can be evaluated further and built upon in the future to reveal more insights about the fifa soccer world.
+
+# References
+
+1.https://www.data-to-viz.com
+
+2.https://bookdown.org/yihui/rmarkdown/html-document.html 
+
+3.https://www.r-graph-gallery.com/
+
+4.https://sportzpoint.com/football/10-most-valuable-football-leagues-in-the-world/
+
+
+

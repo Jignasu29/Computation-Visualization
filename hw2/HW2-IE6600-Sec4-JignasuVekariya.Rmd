@@ -1,0 +1,237 @@
+---
+title: "HW2-IE6600-Sec04-JignasuVekariya"
+output:
+  html_document:
+    df_print: paged
+date: "2022-09-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r libraries}
+library(dplyr)
+library(lubridate)
+library(tidyr)
+library(stringr)
+library(modeest)
+```
+
+```{r ps}
+#Problem Statement:
+#We've been provided National Farmers Market Directory of United States Department of Agriculture. The data contains information about location of farmer market, type of products, type of payment accepted, online social media presence, date and time.
+```
+
+
+```{r datset}
+#import the dataset
+df_farm <- read.csv('hw2/fm.csv', na.strings = "")
+head(df_farm)
+```
+
+
+```{r task 1}
+###Task 1
+## Problem Statement: Count the total number of farmer market by state and arrange them in descending order.
+df_farm %>% 
+  group_by(State) %>% 
+  summarise(Number = n()) %>% 
+  arrange(desc(Number))
+
+##conclusion: California state have maximum number of farmer market in the U.S, 
+#followed by New York and Michigan. Moreover, we can notice that compared to California and New York other state have almost half numbers of farmer markets.
+```
+
+```{r task2}
+###Task 2
+##Problem Statement: Retrieve the number of farmer markets by cities in Massachusetts and display top 5 cities.
+
+cities_in_MA <- df_farm %>% 
+  group_by(city) %>% 
+  filter(State == "Massachusetts") %>% 
+  summarise(Number =n()) %>% 
+  arrange(desc(Number)) %>% 
+  top_n(5)
+
+cities_in_MA
+
+##Conclusion: Top 5 cities in Massachusetts namely Worcester, Boston, Dorchester, Somerville, Springfield having farmer market
+```
+
+```{r}
+colnames(df_farm)  #read all the column names
+```
+
+
+```{r task 3}
+###Task 3
+##Problem Statement:generate table using pivot table which contains a column of payment system which shows values of different type of payment system  and second column about type of products according to payment system and next column contains total number of farmer market according to first two columns. And filter all data by state "Massachusetts".
+
+
+df_pivot <- df_farm %>% filter(State == "Massachusetts")    
+#pivot table which contain all data of Massachusetts state's farmer market
+
+df_pivot <- df_pivot[c(1,11,24:27,29:58)] %>% 
+  pivot_longer(cols=c("Credit","WIC", "WICcash","SFMNP"), names_to = "Payment_System", values_to = "Payment_Made", values_drop_na = TRUE)
+#From the above Pivot, select useful columns and make new column of payment system.
+
+df_pivot <- pivot_longer(data = df_pivot, cols = !c("FMID","State","Payment_Made", "Payment_System"), names_to = "Product_Type", values_to = "Product",)
+#add new column of product type
+
+df_pivot <- filter(df_pivot, Payment_Made == "Y", Product == "Y") %>% 
+  group_by(Payment_System, Product_Type) %>%
+  summarise(`Farmer's Market` = n_distinct(FMID), .groups = "drop")
+#filter further and group by and count the number of markets
+
+sample_n(df_pivot,10)
+
+##conclusion: Table showing the payment system of Credit, WIC, WIC Cash and SFMNP available. Every market is selling different product type on different payment system.
+```
+
+```{r task 4}
+###Task 4
+##Problem Statement: Create one column 'Season1Date' and other 2 columns from that 'StartDate' and 'EndDate' and stored them in original data frame
+
+date_agri <- data.frame(str_split_fixed(df_farm$Season1Date,"to", 2))  # Spiliting date from word 'to' into two parts
+startdate <- date_agri[[1]]  #stored first part in start date
+enddate <- date_agri[[2]]    #stored second part in last date
+l<-length(df_farm) +1        #measure the length of data frame(columns)
+df_farm[l] <- startdate      #Assign start date to new column in data frame
+df_farm[l+1] <- enddate     #Assign end date to new column in data frame
+
+#retrieve all dates together
+colnames(df_farm)[l]<-"Startdate"
+colnames(df_farm)[l+1]<-"Enddate"
+head(df_farm[c(13,60:61)],10)
+
+##conclusion: from the result below, we can say that every market has different season duration. It shows that, maybe season duration is varies on product types and locations.
+
+```
+
+```{r task 5}
+###Task 5
+##Problem Statement: Compute for each borough and tabulate the following variables
+df_ny <- read.csv('hw2/nycollision.csv', na.strings = "")
+head(df_ny)
+
+```
+
+
+```{r}
+colnames(df_ny)  #column names
+```
+```{r con}
+#Conclusion:  Dataset include the details of incidents happens each Borough , date and time, location, number of persons, pedestrians, cyclist, motorist are injured or killed and vehicle type involved in incident
+```
+
+```{r task 5.1}
+# Task 5.1
+##Problem Statements: Number of persons injured in each Borough will all stats such as total number of person injured, minimum, maximum,etc. Arrange in descending order by the total number of persons injured.
+
+br_statistics <- df_ny %>% 
+  group_by(BOROUGH) %>%
+  summarize(Total_number_of_persons_injured = sum(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE),
+            Min_number_of_persons_injured = min(NUMBER.OF.PERSONS.INJURED, na.rm = TRUE),
+            Max_number_of_persons_injured = max(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE),
+            Mean_number_of_persons_injured = mean(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE),
+            Median_number_of_persons_injured = median(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE),
+            Mode_number_of_persons_injured = mlv(NUMBER.OF.PERSONS.INJURED,method = "mfv", na.rm = TRUE), 
+            Quartiles = quantile(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE), .groups = "drop") %>% arrange(desc(Total_number_of_persons_injured)) %>%
+  drop_na()
+
+head(br_statistics,10)
+
+
+##Conclusion: Displays sum, mean, minimum, maximum, median, mode and quartiles of all pedestrians who are injured.we can also notice that Brooklyn has maximum number of incident happened.
+```
+
+
+```{r task 5.2}
+###Task 5.2
+##Problem Statement: List the number of accidents by the type of vehicles involved in each borough
+borough_vehi_acc<- df_ny %>%
+  group_by(BOROUGH,VEHICLE.TYPE.CODE.1,VEHICLE.TYPE.CODE.2,VEHICLE.TYPE.CODE.3,VEHICLE.TYPE.CODE.4,VEHICLE.TYPE.CODE.5) %>%
+  summarise(Vehicle_count=n(), .groups="drop") %>%
+  drop_na()
+head(borough_vehi_acc,10)
+
+#Conclusion: Table contain details of vehicle type code and total numbers
+
+```
+
+```{r task 5.3}
+###Task 5.3
+##Problem Statement: List the factors responsible for the accidents in each borough in descending order
+
+factors <- df_ny %>%
+  pivot_longer(c(CONTRIBUTING.FACTOR.VEHICLE.1, CONTRIBUTING.FACTOR.VEHICLE.2, CONTRIBUTING.FACTOR.VEHICLE.3, CONTRIBUTING.FACTOR.VEHICLE.4,CONTRIBUTING.FACTOR.VEHICLE.5),names_to = "Factors", values_to = "Factors_Responsible", values_drop_na = TRUE)
+
+factors_resp<- factors %>% 
+  group_by(BOROUGH,Factors_Responsible) %>%
+  summarise(Number_of_Accidents = n(), .groups = "drop") %>%
+  drop_na()%>%
+  arrange(desc(Number_of_Accidents))
+
+head(factors_resp,10)
+
+## Conclusion: details of factors type and total number of accidents in the city according to number of accidents in descending order. we can see that, in brooklyn there's majority of accidents are unspecified
+
+
+```
+
+```{r task 5.4}
+###Task 5.4
+##Problem Statement: List the number of accidents by each hour of the day
+Hours_of_day <- data.frame(format(as.POSIXct(df_ny$CRASH.TIME, format="%H:%M"),"%H"))
+colnames(Hours_of_day)[1] <- "Hours_of_day"      #Stored hours in one column
+Hours_of_day<- Hours_of_day %>% count(Hours_of_day,sort=TRUE)  #count accident by hours of day
+
+colnames(Hours_of_day)[2] <- "No_of_accidents"
+Hours_of_day<- Hours_of_day %>% 
+  arrange(Hours_of_day)    #Arrange the table according to hours
+Hours_of_day
+
+##Conclusion: we can see that maximum numbers of accidents happened around 4 and 5 o'clock.
+```
+
+```{r task 5.5}
+### Task 5.5
+##Problem Statement: Give the monthly number of accidents by month and year
+Crash_Date <- as.Date(df_ny$CRASH.DATE, "%m/%d/%Y")   #Store the date column in variable with format
+Crash_Date <- format(as.Date(Crash_Date), "%m-%Y")    #Change the date in month and year format
+df_ny[30]<-Crash_Date
+colnames(df_ny)[30]<-"Month_and_Year"
+Acc_Count <- df_ny %>%
+  count(Month_and_Year)
+colnames(Acc_Count)[2] <- "NO. of Incidents"       #calculate the number of incident by month and year
+head(Acc_Count,16)
+
+#conclusion: total number of accidents according to months we can analyze from available output, There's decreased in number of incident in year of 2020.
+```
+
+```{r task 5.6}
+###Task 5.6
+##Problem Statement: For Brooklyn, List the number of persons injured, killed, pedestrians injured, killed, cyclist injured, killed, motorist injured, killed in the long form with two columns (type of outcome ie., injured/killed,number)
+
+brook<-subset(df_ny,df_ny$BOROUGH=="BROOKLYN",c(3,11:18))  
+brookA<-brook %>%
+  group_by(BOROUGH) %>%
+  summarise(persons_injured=sum(NUMBER.OF.PERSONS.INJURED,na.rm = TRUE),
+            persons_killed =sum(NUMBER.OF.PERSONS.KILLED, na.rm = TRUE),
+            pedestrians_injured=sum(NUMBER.OF.PEDESTRIANS.INJURED,na.rm = TRUE),
+            pedestrians_killed=sum(NUMBER.OF.PEDESTRIANS.KILLED,na.rm = TRUE),
+            cyclist_injured=sum(NUMBER.OF.CYCLIST.KILLED,na.rm = TRUE),
+            cyclist_killed=sum(NUMBER.OF.CYCLIST.KILLED,na.rm = TRUE),
+            motorist_injured=sum(NUMBER.OF.MOTORIST.INJURED,na.rm = TRUE),
+            motorist_killed=sum(NUMBER.OF.MOTORIST.KILLED,na.rm = TRUE)) %>%
+  drop_na()
+brook_long <- pivot_longer(brookA,cols=!c(BOROUGH),names_to="Type of outcome", values_to = "Number")
+brook_long
+
+##Conclusion: we can see that, in brookline majority of persons are injured and killed. 
+##whereas more padestrians are killed and motorist are injured after persons.
+
+```
+

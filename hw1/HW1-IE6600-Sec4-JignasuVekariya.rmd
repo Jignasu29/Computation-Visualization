@@ -1,0 +1,123 @@
+---
+title: "HW 1 - IE 6600 – Sec 4 - <Jignasuben R. Vekariya>"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: "2022-09-12"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r cars}
+
+```
+
+```{r q1}
+#Quenstion 1
+#Use of getwd() function  
+
+getwd()   #display my current working directory
+```
+```{r q2}
+#Quenstion 2
+#Create 2 variables given below and find the class of these 2 variables
+
+x <- 1
+y <- letters[1]
+
+# class function is used to check class of variable, it's different from typeof() function.
+
+class(x)  #class of x variable is numeric
+class(y)  #class of y variable is character as we stores 1 using letters funcion
+```
+
+```{r q3}
+#Quenstion 3
+#work with Vector
+
+#Create a numerical vector “vect” with elements {9, 8, 7, 6, 4} of length 5. Using vector indexing show how you can display the fourth element in this vector in two different ways
+
+#create a vector
+vect <- c(9L, 8L, 7L, 6L, 4L)  # here,'L' after numbers indicates that it must be store in integer datatype
+vect
+
+vect[4]   # display 4th element using index -method 1
+
+vect[4:4]  
+
+```
+
+```{r q4}
+#Quenstion 4
+#work with Matrix
+
+#Create a 2x2 matrix having the following elements {1, 2, 3, 4} using the matrix() function in R and store it in a variable A. Use cbind() on matrix A to add a column with elements {5 , 6} to get a 2x3 matrix and store it in B. Further, use matrix B and add a row having elements {7, 8, 9} to it using rbind().Display A, B and C
+
+matrix_one <- matrix(1:4, ncol =2, nrow = 2)  #matrix 1  #ncol and nrows used to specify number os rows and columns 
+matrix_one
+
+matrix_two <- cbind(matrix_one, c(5,6))       #matrix 2  #cbind() used to add numbrs in new column and bind with matrix
+matrix_two
+
+matrix_three <- rbind(matrix_two, c(7,8,9))   #matrix 3 #rbind() used to add numbrs in new rows and bind with matrix
+matrix_three
+```
+
+```{r q5_1}
+#Quenstion 5(1)
+#work with data frames
+
+library(datasets)
+
+#Use the iris dataframe that is available in R and display the first 5 rows of the dataframe.
+data(iris)   #load the 'Iris' dataset
+head(iris,n=5)   #head() function display first 6 rows of the data frame, here, i'm retriving 5 rows.
+```
+```{r q5_2}
+#Quenstion 5(2)
+#Use the cars dataframe that is available in R and display the last 5 rows of the dataframe.
+
+data(cars)   #load the 'cars' dataset
+tail(cars,n=5)   #tail() function display last 6 rows of the data frame, here, I'm specifiying number of rows 5
+```
+
+```{r data}
+#data()   #data() function use to check available datasets 
+```
+
+```{r q6}
+#Quenstion 6
+#Use the selected dataset to perform five (5) different analysis of your interest to uncover some interesting facts from data.
+
+data(women)   #from all available dataset, I selected 'women'.
+```
+
+```{r}
+head(women)   #using head() function, I checked the value type and columns 
+```
+
+```{r}
+colnames(women)     #colnames() function is use get all available column names
+```
+```{r}
+nrow(women)        #nrows() function use to check total number of rows or records in dataframe
+```
+```{r}
+women[(women$height>63 & women$weight<140),]   #retrived the details of women who's height is more than 63 and weight is less than 140
+
+```
+
+```{r}
+mean(women$height)     #mean() calculate the average of specified column or row 
+``` 
+```{r}
+rowMeans(women)       #rowmeans() used to check mean of each rows
+```
+
+
+```{r pressure, echo=FALSE}
+
+```

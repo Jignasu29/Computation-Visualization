@@ -1,0 +1,223 @@
+---
+title: "HW4_IE6600_Sec04_Group04"
+author: "Parth Urvishkumar Khamar"
+date: "2022-10-11"
+output:
+  word_document: default
+  html_document: default
+---
+```{r Loading Libraries}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+library(reshape2)
+library(extrafont)
+#loadfonts(device = "win")
+```
+
+Problem Statement: 
+Purpose of this assignment to teach, how to use different data and perform analysis using plots via different libraries and functions.
+
+
+```{r Loading Dataset}
+air_df<-read.csv('airlines_delay.csv', na.strings = "")
+head(air_df)
+```
+# Task 1 
+Problem Statement:
+Generate a density plot by delay_type
+
+```{r }
+
+delays <- air_df %>%
+  summarise(carrier_delay, nas_delay, security_delay,
+            weather_delay, late_aircraft_delay) %>%
+  drop_na()
+delays$ID <- seq.int(nrow(delays)) 
+long= melt(delays, id.vars= 'ID')
+ggplot(long,aes(x=log10(value),fill=variable))+geom_density(alpha=0.5)+labs(title="Density plot of carrier delays in mins",x="log delay in mins", y = "Density") + labs(fill = "Delay type")
+```
+
+Conclusion: After monitering this plot, we can see that major delays are happened because of weather
+
+## Task 2 
+# Problem Statement:  
+Create correlation plots for arr_flights, arr_del15, arr_cancelled, arr_diverted, arr_delay, carrier_delay,
+weather_delay, nas_delay, security_delay and late_aircraft_delay with upper half containing correlation plot and lower triangle with magnitude of correlation with the labels not overlapping
+
+
+```{r }
+fig.width=8
+library(corrplot)
+library(tidyr)
+library(data.table)
+air <- setnames(air_df, old = c("arr_flights","arr_del15","arr_cancelled","arr_diverted","arr_delay","carrier_delay","weather_delay","nas_delay","security_delay","late_aircraft_delay"), 
+new = c('arr \n flights','arr \n del15','arr \n cancelled','arr \n diverted','arr \n delay','carrier \n delay','weather \n delay','nas \n delay','security \n delay','late \n aircraft \n delay'))
+
+df<- air %>%
+  select('arr \n flights', 'arr \n del15','arr \n cancelled',
+         'arr \n diverted', 'arr \n delay',
+         'carrier \n delay','weather \n delay',
+         'nas \n delay', 'security \n delay', 'late \n aircraft \n delay') %>%
+  drop_na()
+M<- cor(df)
+corrplot.mixed(M, lower.col="black", number.cex=1, tl.cex=1, cl.cex=1) 
+```
+
+Conclusion: From the correlation matrix we see that all the delays are in positive value that everyone 
+
+
+```{r}
+wages<- read.csv('wages_jobs.csv', na.strings = "")
+head(wages)
+colnames(wages)
+```
+
+#Task 3
+Problem Statement:
+generate a heat map to plot the gender difference with occupation over the year
+
+```{r fig, fig.width=10}
+library(scales)
+d<- wages %>%
+  select(Gender, Year, PUMS.Occupation, Total.Population )%>%
+  group_by(PUMS.Occupation, Gender) %>%
+  drop_na()
+f<- filter(d,Gender=='Female')
+m<-filter(d, Gender=='Male')
+df2<- merge(f, m, by=c("Year","PUMS.Occupation"))
+df3<-mutate(df2, avg_num_diff= Total.Population.y-Total.Population.x)
+plt1 <- df3 %>%
+  select(Year, PUMS.Occupation, avg_num_diff) %>%
+  ggplot( aes(x=Year,y= PUMS.Occupation)) + geom_tile(aes(fill= avg_num_diff), alpha=0.9) + coord_fixed() +
+  labs(title="Difference between number of Male and Female Employees",x="Year", y = "Occupation") +
+  theme(plot.title = element_text(size=9)) + labs(fill = "Difference") 
+plt1
+```
+
+#conclusion:
+The above heat map shows that more females are working as a flight attendents whereas more males are working as a aircraft pilots & flight engineers.
+
+
+## Task 4
+# Problem Statement:
+Create an Alluvial chart with number of male and female workers from each  different PUMS. Occupations in each year.
+
+```{r fig, fig.width=10}
+library(tidyverse)
+library(ggplot2)
+library(ggalluvial)
+plt2 <- ggplot(data = d,
+               aes(axis1 = PUMS.Occupation, axis2 = Year, y=Total.Population))+ scale_x_discrete(limits = c("Occupation", "Gender"), expand = c(.02, .02)) +    geom_alluvium(aes(fill = Gender )) +
+               geom_stratum() +
+               geom_text(stat = "stratum", aes(label = after_stat(stratum)), size=2.5) +   
+               theme_minimal() +
+               ggtitle(" Total Male & Female workers involved in occupations") 
+              
+plt2
+```
+
+#conclusion:
+We can notice the male-female ratio during the 5 year is same like more female connected with Customer service representative and flight attendants.
+
+## Task 5
+# Problem Statement
+Stacked Bar plot to display avg wages in each PUMS.occupation identifying male and female employees using color in year 2018
+
+```{r fig, fig.width=10 }
+wj <- wages %>%
+  filter(wages$Year=="2018")
+
+
+wj1 <- ggplot(wj,aes(x=PUMS.Occupation,y=Average.Wage,fill=Gender)) +
+  geom_bar(stat="identity")  +
+   theme(axis.text.x = element_text(angle=90, hjust = 1)) + 
+   labs(y="Average wage", x = "Occupation", color="Gender") +labs(title="Stacked barchart to identify avg wage of Male and Female employees in 2018 in each occupation")
+
+wj1
+```
+
+#conclusion:
+Average wages of male and female in every category of occupation is approximate same.
+
+## Task 6
+# Problem Statement:
+Create a Tree Map for the Major.occupation.Group with each rectangle proportional to number of people working in detailed Occupation in 20184
+
+```{r fig, fig.width=10}
+occupation<- read.csv('occupations.csv',na.strings=(""))
+head(occupation)
+colnames(occupation)
+
+library(treemapify)
+count(occupation, Minor.Occupation.Group)
+
+data <- occupation %>%
+ filter(Year==2018) %>%
+  group_by(Major.Occupation.Group,Detailed.Occupation) %>%
+  summarise(total= Total.Population, .groups = NULL)
+
+tree_map <- ggplot(data, aes(area=total, label=Detailed.Occupation, fill=Major.Occupation.Group, subgroup=Major.Occupation.Group)) +
+           geom_treemap() +
+           ggtitle("Workforce Distribution by Detailed Occupation for 2018") +
+           geom_treemap_text(fontface = "italic", colour = "white", place = "centre", grow = TRUE)
+
+tree_map
+```
+
+# Conclusion:
+Most of the employees are into service occupations. Most of them happen to be waiters& waitresses , Cooks. Also, the data set might be containing only occupations from food industry. 
+
+## Task7
+# Problem Statement - Explore Plotly in R here and create any chart of your choice from any of the datasets provided in this homework. 
+
+```{r}
+hist(occupation$ID.Year)
+```
+
+```{r}
+library(plotly)
+
+df_air <- read.csv('airlines_delay.csv', na.strings = "")
+req_columns <- c("carrier","year","arr_delay")
+
+df_airline_required <- df_air[,req_columns] %>%
+mutate(across(!carrier, ~replace_na(.x, 0)))
+
+df_airline_top <- aggregate(df_airline_required$arr_delay, by=list(carrier=df_airline_required$carrier), FUN = sum) %>%
+  arrange(desc(x)) 
+
+df_airline_top_ten <- head(df_airline_top,10)
+
+df_aggregate_year <- df_airline_required %>%
+group_by(year,carrier) %>%
+summarise(Total = sum(arr_delay)) 
+
+df_airline_combined <- inner_join(df_aggregate_year, df_airline_top_ten, by = "carrier")
+fig <- plot_ly(data = df_airline_combined, x = ~year, y = ~Total, color = ~carrier,mode='line')
+
+fig
+```
+```{r}
+# Create test data.
+data <- data.frame(
+  Major_occupation_group=c("Production, Transportation, & Material Moving Occupations", "Management, business, science, & arts occupations", "Service Occupations","Natural resources, construction, & maintenance occupations", "Sales & Office Occupations"),
+  Number_of_People=c(105,223,130,40,148)
+)
+ 
+# Compute percentages
+data$fraction = data$Number_of_People / sum(data$Number_of_People)
+
+# Compute the cumulative percentages (top of each rectangle)
+data$ymax = cumsum(data$fraction)
+
+# Compute the bottom of each rectangle
+data$ymin = c(0, head(data$ymax, n=-1))
+ 
+# Make the plot
+ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Major_occupation_group)) +
+     geom_rect()+coord_polar(theta="y")  + # Try to remove that to understand how the chart is built initially
+     xlim(c(2, 4)) + # Try to remove that to see how to make a pie chart  
+     scale_fill_manual(values = c("#B2182B","#F4A582", "#D1E5F0", "#92C5DE", "#2166AC"))
+```

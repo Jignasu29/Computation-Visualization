@@ -1,0 +1,213 @@
+---
+title: "Homework3-IE6600-Sec4-JignasuVekariya"
+output: html_document
+date: "2022-10-03"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+#Libraries 
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(ggplot2)
+library(lubridate)
+```
+
+```{r}
+#TASK 1
+
+#Load the dataset
+wine_data <- read.csv("C:/Users/jrvek/Documents/Comp. Vis/hw3/wine_data.csv",header = TRUE,sep = ',')
+
+#Display first 6 data to get overall idea about values
+head(wine_data)
+```
+
+```{r}
+#Dispay all column names
+colnames(wine_data)
+```
+
+
+```{r}
+#TASK 1.1
+#PROBLEM STATEMENT: count the frequency of "variety" variable and display top 10 vriables
+
+wine_variety <- wine_data %>%     
+  group_by(variety) %>%                        #group by variety
+  summarise(total_variety=n()) %>%             #count number of variety
+  select(variety,total_variety) %>%            #select variety name and number of varity
+  arrange(desc(total_variety))                 #arrange in descending order
+head(wine_variety,10)                          # Display top 10 variety
+```
+```{r}
+#CONCLUSION: We can conclude that, top 4 variety has 10k+ total variety
+```
+
+
+```{r}
+#TASK 1.2
+#PROBLEM STATEMENT: calculate the average of points group by country
+
+wine_points <- wine_data %>%
+  group_by(country) %>%                                     #group by country
+  summarise(average_points= mean(points,na.rm=TRUE)) %>%    #average of points
+  select(country,average_points) %>%                        # select country name and their average points
+  arrange(desc(average_points))                             #arrange data in order
+head(wine_points)                                           #Print first 6 data from output
+```
+
+```{r}
+#CONCLUSION:  we can notice that England has more average point than any country and france, germant, italy,canada having almost same average points
+```
+
+
+```{r}
+#TASK 1.3
+#PROBLEM STATEMENT: Display the Province name which has highest average price
+
+high_avg_price <- wine_data %>% 
+  group_by(province) %>%                                          #group by on province
+  summarise(average_price = mean(price,na.rm=TRUE)) %>%   #Average of price
+  select(province,average_price) %>%                      #select province and mean of price
+  arrange(desc(average_price))                            #arrange data in descending
+head(high_avg_price,1)                                            #display the first province having highest price
+```
+
+```{r}
+#CONCLUSION: Santa Cruz province has highest average price of wine 
+```
+
+
+```{r}
+#TASK 1.4
+#PROBLEM STATEMENT: Display province name of US which has the highest average price  
+high_avg_price_US <- wine_data %>%
+  filter(country=="US")%>%                                        #first apply filter for country United States 
+  group_by(province) %>%                                          #group by province to count according to province
+  summarise(average_price_US = mean(price,na.rm=TRUE)) %>%     #average of price
+  select(province,average_price_US) %>%                       #print province list with their average price
+  arrange(desc(average_price_US))                            #arrange in order
+head(high_avg_price_US,1)                                     #highest average price 
+``` 
+
+```{r}
+#CONCLUSION: Nevada province has highest overall price
+```
+
+
+```{r}
+#TASK 1.5
+#PROBLEM STATEMENT: Print the list of wines which is 20 year old from the designation
+
+wine_20 <- wine_data[grep(c("20 Y|20-|20 Ye|20 year old|20 years old|20th A"),wine_data$designation),]   #here, 'grep' use for mathing the pattern
+dim(wine_20)[1]          #count total wines using 'dim', which display size of array
+```
+
+
+
+```{r}
+#TASK 2
+#PROBLEM STATEMENT: based on Month in Season1Date, calculate number of farmer market.
+
+library(chron)   #'chron' library used to handle date and time data
+
+farmer_data = read.csv("C:/Users/jrvek/Documents/Comp. Vis/hw3/fm.csv", header = TRUE , sep = ',')
+head(farmer_data)
+```
+
+```{r}
+colnames(farmer_data)
+```
+
+```{r}
+Answer2 <- separate(farmer_data,Season1Date,
+                    into = c("StartDate","EndDate"),
+                    sep = "to",remove = F,convert = T,fill = "left")   #seperate two dates and store into separate columns
+```
+
+```{r}
+start_date <- as.Date(Answer2$StartDate,"%m/%d/%Y")    #convert format of date 
+start_month <- month.day.year(start_date)$month     #extract month from startdate
+start_month <- month.name[start_month]              #convert month number into names
+
+end_date <- as.Date(Answer2$EndDate,"%m/%d/%Y")     #convert format of date
+end_month <- month.day.year(end_date)$month         #extract month from enddate
+enf_month <- month.name[end_month]
+
+task2 <- farmer_data %>% mutate(Answer2,start_month,end_month)     #mutate both month into dataframe
+task2 <- task2 %>% group_by(State,start_month) %>% summarise(count=n())%>%                          #calculate number of market Group by state first and then month 
+  na_if("")%>%
+  na.omit()%>%
+  drop_na()
+task2 %>%
+  pivot_wider(names_from = start_month, values_from = count, values_fill = list(count = 0))   #output is in long table form, tranfrom into wider form by month name 
+
+```
+```{r} 
+#CONCLUSION: From the above output we can conclude that, except May, June, January every state is holding very less farmer market
+```
+
+
+```{r}
+#TASK 3
+#PROBLEM STATEMENT: Based on month in updateTime, print the list of active farmer market
+
+answer3 <- separate(farmer_data,updateTime,into = c("MM","DD","YYYY(Time)"),sep = "/",remove = "F",
+                    convert = "T",fill = "left") %>%      #separate date and time into month, date, year and time
+  drop_na()
+answer3 <- answer3%>% 
+  filter(State=="California")%>%                #filter the data according to state 'California'
+  group_by(City=city,Month=MM)%>%               #first group data according to city and then month to calculate
+  summarise(Active_Farmers_Market=n()) %>%      #summarize total number based on above group
+  na_if("")%>%
+  na.omit()%>%
+  drop_na()
+
+answer3 
+```
+
+```{r}
+#CONCLUSION: from above output, we can notice that almost every city has only one active farmer market in one month
+```
+
+
+```{r}
+#TASK 4 :
+#PROBLEM STATEMENT: Display the stacked barchart of top 10 carriers from total number of late aircraft delaya for each carrier.
+
+df_airlines <- read.csv("C:/Users/jrvek/Documents/Comp. Vis/hw3/airlines_delay.csv",header = TRUE,sep = ",")
+
+```
+
+```{r}
+colnames(df_airlines)
+```
+
+
+```{r}
+total_delay <- df_airlines %>% 
+group_by(carrier) %>%                           #group by carrier 
+summarize(Total_Mins_Delay = sum(late_aircraft_delay, na.rm = TRUE))%>%          #sum of total min of delay based on carrier
+arrange(desc(Total_Mins_Delay)) %>%
+drop_na()
+
+total_delay <- head(total_delay, 10)         #display first 10 delay
+  
+carrier_year <- df_airlines[c(1, 3)] %>%
+group_by(carrier, year)
+
+carrier_join <- total_delay %>%                     #join carrier year and total delay
+inner_join(carrier_year, by = "carrier")
+
+ggplot(data = carrier_join, aes(x = reorder(carrier, -Total_Mins_Delay), y= Total_Mins_Delay,fill = as.factor(year))) + geom_bar(stat = "sum")  #plot the graph
+```
+
+```{r}
+#CONCLUSION: By dividing the total amount of delays into stacks based on the total number of minutes each year, the code above allows us to display which airlines experience the most delays overall.
+```
+
